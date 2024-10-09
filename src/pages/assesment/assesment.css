@@ -120,7 +120,7 @@
 
 .tab-top-section form button[type='submit']{
     border-radius: 17.387px;
-    background: #D9634E;
+    background: #D9634E !important;
     width: 100%;
     color: #FFF;
 font-family: Inter;
@@ -136,6 +136,7 @@ letter-spacing: -0.615px;
 }
 .upload-input{
   margin-top: 20px;
+  display: block;
 }
 
 .upload-input .ant-upload-btn{
