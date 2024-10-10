@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import ReactPaginate from 'react-paginate';
 import { Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import './assesment.css';
-import { data } from '../data/Detailreport';
+import axios from 'axios'; // Import axios if you are using it
 import { images } from '../../assets/images';
 import { Modal } from "flowbite-react";
 
@@ -16,8 +16,34 @@ function ViewReport() {
     const [currentPage, setCurrentPage] = useState(0);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [openModal, setOpenModal] = useState(false);
+    const [data, setData] = useState([]); // New state for storing API data
     const itemsPerPage = 10;
 
+    // Fetch data from API
+    const fetchData = async () => {
+        try {
+            const response = await axios.get('http://127.0.0.1:8000/ai_assessment/detailed_assessment_report/');
+            const fetchedData = response.data.data.map(item => ({
+                id:item.id,
+                module: item.vchr_module_name,
+                faculty: item.vchr_faculty_name,
+                dateOfEvaluation: item.dat_evaluation,
+                studentsCount: item.int_assessment_count,
+                students: item.details.map(detail => ({
+                    name: detail.vchr_student_name,
+                    score: detail.vchr_final_score
+                }))
+            }));
+            setData(fetchedData);
+            console.log("dtl-response",fetchedData)
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     // Filter and sort data
     const filteredData = data
@@ -34,29 +60,23 @@ function ViewReport() {
         })
         .sort((a, b) => new Date(b.dateOfEvaluation) - new Date(a.dateOfEvaluation));
 
-    // Get current entries to display based on pagination
+    // Pagination
     const indexOfLastEntry = (currentPage + 1) * itemsPerPage;
     const indexOfFirstEntry = indexOfLastEntry - itemsPerPage;
     const currentEntries = filteredData.slice(indexOfFirstEntry, indexOfLastEntry);
 
-    console.log("Current Entries on page", currentPage, ":", currentEntries); // Log the entries for the current page
-
     const handlePageClick = (event) => {
-        console.log("Page clicked:", event.selected); // Log the page number clicked
         setCurrentPage(event.selected);
     };
 
     const pageCount = Math.ceil(filteredData.length / itemsPerPage);
 
     const handleSubmit = () => {
-        console.log("Submitted Start Date:", startDate); // Log submitted start date
-        console.log("Submitted End Date:", endDate);     // Log submitted end date
         setSubmittedStartDate(startDate);
         setSubmittedEndDate(endDate);
         setCurrentPage(0); // Reset to the first page after filtering
     };
 
-    // Format date to dd/MM/yyyy
     const formatDate = (dateString) => {
         const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
         return new Date(dateString).toLocaleDateString('en-GB', options);
@@ -108,23 +128,15 @@ function ViewReport() {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                     <div className="flex items-center">
                                         <span className="inline-block text-count">{entry.studentsCount}</span>
-                                        {entry.studentAvatars.map((avatar, index) => (
-                                            <img key={index} src={images.Avatar} alt="student avatar" className="w-8 h-8 rounded-full object-cover ml-[-5px]" />
-                                        ))}
-
                                         <button
                                             className='eyeicon'
                                             onClick={() => {
                                                 setSelectedStudent(entry.students);
-                                                console.log("std", entry.students);
-                                                setOpenModal(true);  // Open the modal
+                                                setOpenModal(true);
                                             }}
                                         >
                                             <img src={images.EyeIcon} alt="" /> view
                                         </button>
-
-
-
                                     </div>
                                 </td>
                                 <td className="text-center">{formatDate(entry.dateOfEvaluation)}</td>
@@ -133,7 +145,6 @@ function ViewReport() {
                     </tbody>
                 </table>
 
-                {/* Pagination */}
                 <ReactPaginate
                     previousLabel={<ChevronLeft />}
                     nextLabel={<ChevronRight />}
@@ -146,42 +157,34 @@ function ViewReport() {
                     activeClassName={"pagination__link--active"}
                 />
 
-                {/* modal */}
-
-                <Modal dismissible show={openModal} onClose={() => setOpenModal(false)} className='modal-bdy' >
-                    <Modal.Body >
+                <Modal dismissible show={openModal} onClose={() => setOpenModal(false)} className='modal-bdy'>
+                    <Modal.Body>
                         {selectedStudent ? (
-                            <div className="p-4">
-                            <table className="w-full border-collapse">
-                              <thead>
-                                <tr className="bg-gray-100 text-left">
-                                  <th className="text-center">NO</th>
-                                  <th className="text-center">Student name</th>
-                                  <th className="text-center">Final Score</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {selectedStudent.map((student,index) => (
-                                  <tr key={index} className="border-t border-gray-200">
-                                    <td className="text-center">{index+1}</td>
-                                    <td className="text-center">{student.name}</td>
-                                    <td className="text-center">{student.score}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                            <div>
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-100 text-left">
+                                            <th className="text-center">NO</th>
+                                            <th className="text-center">Student name</th>
+                                            <th className="text-center">Final Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {selectedStudent.map((student, index) => (
+                                            <tr key={index} className="border-t border-gray-200">
+                                                <td className="text-center">{index + 1}</td>
+                                                <td className="text-center">{student.name}</td>
+                                                <td className="text-center">{student.score}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         ) : (
                             <p>No student data available</p>
                         )}
                     </Modal.Body>
                 </Modal>
-
-                {/* modal */}
-
-
-
-
             </div>
         </div>
     );

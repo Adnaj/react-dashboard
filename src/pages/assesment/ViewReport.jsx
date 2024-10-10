@@ -23,15 +23,20 @@ function ViewReport() {
             try {
                 const response = await axios.get('http://127.0.0.1:8000/ai_assessment/assessment_report/');
                 console.log("API Response:", response.data.data); // Log the response
-                const apiData = response.data.data.map(item => ({
-                    id: item.id,
-                    name: item.vchr_student_name,
-                    enrollment: item.vchr_student_enrollment_number,
-                    score: item.vchr_final_score,
-                    date: item.date,
-                    pdfLink: item.file_detailed_overview
-                }));
+                const apiData = response.data.data.map((item, index) => {
+                    const dateObj = new Date(item.dat_created);
+                    const formattedDate = dateObj.toLocaleDateString('en-GB'); // format to dd/MM/yyyy
+                    return {
+                        id: index,
+                        name: item.vchr_student_name,
+                        enrollment: item.vchr_student_enrollment_number,
+                        score: item.vchr_final_score,
+                        date: formattedDate,
+                        pdfLink: item.file_detailed_overview
+                    };
+                });
                 setData(apiData);
+                console.log("apidata", apiData);
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
@@ -39,11 +44,16 @@ function ViewReport() {
         fetchData();
     }, []);
 
+    // Function to parse dd/MM/yyyy to Date object
+    const parseDate = (dateString) => {
+        const [day, month, year] = dateString.split('/');
+        return new Date(`${year}-${month}-${day}`);
+    };
 
     // Filter, sort, and paginate the data
     const filteredData = data
         .filter(student => {
-            const studentDate = new Date(student.date);
+            const studentDate = parseDate(student.date);
             if (submittedStartDate && submittedEndDate) {
                 return studentDate >= submittedStartDate && studentDate <= submittedEndDate;
             } else if (submittedStartDate) {
@@ -53,7 +63,7 @@ function ViewReport() {
             }
             return true;
         })
-        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date descending
+        .sort((a, b) => parseDate(b.date) - parseDate(a.date)); // Sort by date descending
 
     const indexOfLastStudent = (currentPage + 1) * studentsPerPage;
     const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
@@ -66,9 +76,9 @@ function ViewReport() {
     const pageCount = Math.ceil(filteredData.length / studentsPerPage);
 
     const handleSubmit = () => {
-        setSubmittedStartDate(startDate);
-        setSubmittedEndDate(endDate);
-        setCurrentPage(0); // Reset to the first page after filtering
+        setSubmittedStartDate(startDate ? parseDate(startDate.toLocaleDateString('en-GB')) : null);
+        setSubmittedEndDate(endDate ? parseDate(endDate.toLocaleDateString('en-GB')) : null);
+        setCurrentPage(0); 
     };
 
     const formatDate = (dateString) => {
@@ -114,7 +124,7 @@ function ViewReport() {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {currentStudents.map((student,index) => (
+                        {currentStudents.map((student, index) => (
                             <tr key={index}>
                                 <td className="whitespace-nowrap">{student.name}</td>
                                 <td className="text-center whitespace-nowrap">{student.enrollment}</td>

@@ -38,8 +38,18 @@ function UploadAssignments() {
         // Fetch the module list based on the selected course
         const fetchModules = async (courseId) => {
             try {
-                const response = await axios.post(`http://127.0.0.1:8000/ai_assessment/module_list/?intCourseId=${courseId}`);
+                const response = await axios.post(
+                    `http://127.0.0.1:8000/ai_assessment/module_list/`,
+                    { intCourseId: courseId }, // Send courseId in the request body as JSON
+                    {
+                        headers: {
+                            'Content-Type': 'application/json' // Set header type as JSON
+                        }
+                    }
+                );
+                
                 if (response.status === 200) {
+                    console.log("courseId", courseId);
                     setModules(response.data);
                     console.log("module", response.data);
                 }
@@ -48,14 +58,16 @@ function UploadAssignments() {
                 console.error('Error fetching modules:', error);
             }
         };
-
+    
         // Fetch modules only if a course is selected
         if (courseName) {
+            console.log(courseName);
             fetchModules(courseName);
         } else {
             setModules([]); // Reset modules if no course is selected
         }
     }, [courseName]);
+    
 
     const beforeUpload = (file) => {
         const isFileSizeValid = file.size / 1024 / 1024 < 100; // Check if file is less than 100MB
