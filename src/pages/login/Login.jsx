@@ -17,7 +17,6 @@ function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if the user is already logged in
     const token = localStorage.getItem('token');
     if (token) {
       navigate('/'); // Navigate to the home page if logged in
@@ -33,11 +32,11 @@ function Login() {
       const response = await axios.post('/user/login_check/', { email: username, password });
       
       if (response.data.status === 1) {
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('authToken', response.data.token);
         localStorage.setItem('str_session_key', response.data.str_session_key);
         console.log("user", response.data);
-        message.success("Login successful!"); // Display success message
-        setUsername(''); // Clear username field
+        message.success("Login successful!"); 
+        setUsername(''); 
         setPassword(''); // Clear password field
         navigate('/'); // Navigate to the assessment page
       } else {

@@ -3,7 +3,8 @@ import './assesment.css';
 import { Upload, Button, message } from 'antd';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import axios from 'axios';
+import axios from '../../constants/axiosConfig';
+import { useNavigate } from 'react-router-dom';
 
 function UploadAssignments() {
     const [startDate, setStartDate] = useState(null);
@@ -16,11 +17,13 @@ function UploadAssignments() {
     const [modules, setModules] = useState([]); // State to hold module list
     const [loading, setLoading] = useState(false); // Loading state for button
 
+    const navigate = useNavigate(); // Initialize useNavigate for navigation
+
     useEffect(() => {
         // Fetch the course list from the API
         const fetchCourses = async () => {
             try {
-                const response = await axios.get('http://127.0.0.1:8000/ai_assessment/course_list/');
+                const response = await axios.get('/ai_assessment/course_list/');
                 if (response.status === 200) {
                     setCourses(response.data);
                     console.log("course", response.data);
@@ -39,17 +42,16 @@ function UploadAssignments() {
         const fetchModules = async (courseId) => {
             try {
                 const response = await axios.post(
-                    `http://127.0.0.1:8000/ai_assessment/module_list/`,
-                    { intCourseId: courseId }, // Send courseId in the request body as JSON
+                    `/ai_assessment/module_list/`,
+                    { intCourseId: courseId },
                     {
                         headers: {
-                            'Content-Type': 'application/json' // Set header type as JSON
+                            'Content-Type': 'application/json'
                         }
                     }
                 );
                 
                 if (response.status === 200) {
-                    console.log("courseId", courseId);
                     setModules(response.data);
                     console.log("module", response.data);
                 }
@@ -59,15 +61,12 @@ function UploadAssignments() {
             }
         };
     
-        // Fetch modules only if a course is selected
         if (courseName) {
-            console.log(courseName);
             fetchModules(courseName);
         } else {
             setModules([]); // Reset modules if no course is selected
         }
     }, [courseName]);
-    
 
     const beforeUpload = (file) => {
         const isFileSizeValid = file.size / 1024 / 1024 < 100; // Check if file is less than 100MB
@@ -119,29 +118,38 @@ function UploadAssignments() {
 
         const formData = new FormData();
         assignments.forEach(file => {
-            formData.append('studentAssignmentFile', file.originFileObj); // Append each file to FormData
+            formData.append('studentAssignmentFile', file.originFileObj);
         });
         formData.append('strFacultyFirstName', facultyFirstName);
         formData.append('strFacultyLastName', facultyLastName);
-        formData.append('intModuleId', moduleName);  // Ensure moduleName is an integer
-        formData.append('intCourseId', courseName);  // Assuming courseName is an ObjectId string
+        formData.append('intModuleId', moduleName);
+        formData.append('intCourseId', courseName);
         formData.append('moduleMonth', startDate ? startDate.toISOString().split('T')[0] : '');
 
         try {
-            const response = await axios.post('http://127.0.0.1:8000/ai_assessment/ai_assessment/', formData, {
+            const response = await axios.post('/ai_assessment/ai_assessment/', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
             if (response.status === 200) {
                 message.success('Assignments uploaded successfully!');
-                console.log('Form Data:', Object.fromEntries(formData.entries()));
-                console.log(response.data);
+                navigate('/assessment', { state: { activeTab: 1 } });
+            } else {
+                message.error('Something went wrong. Please try again.');
             }
         } catch (error) {
             message.error('Failed to upload assignments. Please try again.');
             console.error(error);
         } finally {
+            // Clear form fields after receiving a response
+            setFacultyFirstName('');
+            setFacultyLastName('');
+            setModuleName('');
+            setCourseName('');
+            setStartDate(null);
+            setAssignments([]);
+            setModules([]); // Clear module list
             setLoading(false); // Stop loading when response is received
         }
     };
@@ -217,7 +225,6 @@ function UploadAssignments() {
                                 Or Drop files here
                             </Upload.Dragger>
                         </div>
-                        {/* Upload section end */}
                     </div>
                 </div>
 
@@ -262,7 +269,7 @@ function UploadAssignments() {
                     <Button
                         type="primary"
                         htmlType="submit"
-                        className="border-transparent bg-[#D9634E] hover:bg-[#D9634E] text-white px-4 py-2 rounded focus:outline-none hover:bg-transparent"
+                        className="border-transparent bg-[#D9634E] hover:bg-[#D9634E] text-white px-4 py-2 rounded focus:outline-none"
                         disabled={loading}
                         loading={loading} // Set loading state here
                     >

@@ -4,7 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import ReactPaginate from 'react-paginate';
 import { Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import './assesment.css';
-import axios from 'axios'; // Import axios if you are using it
+import axios from '../../constants/axiosConfig';
 import { images } from '../../assets/images';
 import { Modal } from "flowbite-react";
 
@@ -16,15 +16,16 @@ function ViewReport() {
     const [currentPage, setCurrentPage] = useState(0);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [openModal, setOpenModal] = useState(false);
-    const [data, setData] = useState([]); // New state for storing API data
+    const [data, setData] = useState([]); 
+    const [loading, setLoading] = useState(true); // New state for loading
     const itemsPerPage = 10;
 
     // Fetch data from API
     const fetchData = async () => {
         try {
-            const response = await axios.get('http://127.0.0.1:8000/ai_assessment/detailed_assessment_report/');
+            const response = await axios.get('/ai_assessment/detailed_assessment_report/');
             const fetchedData = response.data.data.map(item => ({
-                id:item.id,
+                id: item.id,
                 module: item.vchr_module_name,
                 faculty: item.vchr_faculty_name,
                 dateOfEvaluation: item.dat_evaluation,
@@ -35,9 +36,10 @@ function ViewReport() {
                 }))
             }));
             setData(fetchedData);
-            console.log("dtl-response",fetchedData)
         } catch (error) {
             console.error("Error fetching data:", error);
+        } finally {
+            setLoading(false); // Stop loading once data is fetched
         }
     };
 
@@ -111,39 +113,45 @@ function ViewReport() {
             </div>
 
             <div className="view-report-table overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className=" text-left">Module Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty Name</th>
-                            <th className="text-center">List of Students</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Evaluation</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {currentEntries.map((entry) => (
-                            <tr key={entry.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.module}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{entry.faculty}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    <div className="flex items-center">
-                                        <span className="inline-block text-count">{entry.studentsCount}</span>
-                                        <button
-                                            className='eyeicon'
-                                            onClick={() => {
-                                                setSelectedStudent(entry.students);
-                                                setOpenModal(true);
-                                            }}
-                                        >
-                                            <img src={images.EyeIcon} alt="" /> view
-                                        </button>
-                                    </div>
-                                </td>
-                                <td className="text-center">{formatDate(entry.dateOfEvaluation)}</td>
+                {loading ? (
+                    <div className="flex justify-center items-center py-10">
+                        <p>Loading data...</p>
+                    </div>
+                ) : (
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="text-left">Module Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty Name</th>
+                                <th className="text-center">List of Students</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Evaluation</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {currentEntries.map((entry) => (
+                                <tr key={entry.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.module}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{entry.faculty}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div className="flex items-center justify-center">
+                                            <span className="inline-flex text-count items-center justify-center">{entry.studentsCount}</span>
+                                            <button
+                                                className='eyeicon'
+                                                onClick={() => {
+                                                    setSelectedStudent(entry.students);
+                                                    setOpenModal(true);
+                                                }}
+                                            >
+                                                <img src={images.EyeIcon} alt="" /> view
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td className="text-center">{formatDate(entry.dateOfEvaluation)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
 
                 <ReactPaginate
                     previousLabel={<ChevronLeft />}

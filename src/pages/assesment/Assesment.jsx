@@ -1,25 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import './assesment.css';
-import { images } from '../../assets/images'
+import { images } from '../../assets/images';
 import { Avatar } from "flowbite-react";
 import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
-import AssignmentForm from './UploadAssignments'
+import AssignmentForm from './UploadAssignments';
 import ViewReport from './ViewReport';
-import Detailreport from './DetailReport'
+import Detailreport from './DetailReport';
 
 function Assesment() {
-
   const location = useLocation();
+  const navigate = useNavigate();
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
   useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      // Redirect to login if token is missing
+      navigate('/login');
+    }
+
+    // Set the initial tab if activeTab is passed in the location state
     if (location.state && location.state.activeTab !== undefined) {
       setSelectedTabIndex(location.state.activeTab);
     }
-  }, [location]);
+  }, [location, navigate]);
 
   return (
     <div className="min-h-screen">
@@ -50,25 +57,22 @@ function Assesment() {
 
           <div className="pt-[60px] container mx-auto tab-top-section">
             {/* React Tabs */}
-
-            <TabPanel >
-             <AssignmentForm/>
+            <TabPanel>
+              <AssignmentForm />
             </TabPanel>
 
             <TabPanel>
-              <ViewReport/>
+              <ViewReport />
             </TabPanel>
 
             <TabPanel>
-              <Detailreport/>
+              <Detailreport />
             </TabPanel>
-
           </div>
         </Tabs>
       </div>
-
     </div>
-  )
+  );
 }
 
 export default Assesment;

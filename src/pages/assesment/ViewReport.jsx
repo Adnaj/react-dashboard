@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../constants/axiosConfig';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import ReactPaginate from 'react-paginate';
@@ -15,13 +15,14 @@ function ViewReport() {
     const [submittedStartDate, setSubmittedStartDate] = useState(null);
     const [submittedEndDate, setSubmittedEndDate] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
+    const [loading, setLoading] = useState(true); // New loading state
     const studentsPerPage = 10;
 
     // Fetch data from the API when the component mounts
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get('http://127.0.0.1:8000/ai_assessment/assessment_report/');
+                const response = await axios.get('/ai_assessment/assessment_report/');
                 console.log("API Response:", response.data.data); // Log the response
                 const apiData = response.data.data.map((item, index) => {
                     const dateObj = new Date(item.dat_created);
@@ -36,9 +37,11 @@ function ViewReport() {
                     };
                 });
                 setData(apiData);
+                setLoading(false); // Set loading to false once data is fetched
                 console.log("apidata", apiData);
             } catch (error) {
                 console.error("Error fetching data:", error);
+                setLoading(false); // Set loading to false even if there's an error
             }
         };
         fetchData();
@@ -113,36 +116,43 @@ function ViewReport() {
                     Apply now
                 </button>
             </div>
+            
             <div className="view-report-table">
-                <table className="min-w-full divide-y">
-                    <thead>
-                        <tr>
-                            <th className="pl-[50px] tracking-wider">Student Name</th>
-                            <th className="text-center tracking-wider">Student Enrollment No</th>
-                            <th className="tracking-wider">Final Score</th>
-                            <th className="tracking-wider">Detail Overview of Grade</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {currentStudents.map((student, index) => (
-                            <tr key={index}>
-                                <td className="whitespace-nowrap">{student.name}</td>
-                                <td className="text-center whitespace-nowrap">{student.enrollment}</td>
-                                <td className="text-center whitespace-nowrap">{student.score}</td>
-                                <td className="text-center whitespace-nowrap">
-                                    <a
-                                        href={student.pdfLink}
-                                        className="text-blue-600 hover:text-blue-900"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        <Eye className="inline mr-2 h-4 w-4" /> View
-                                    </a>
-                                </td>
+                {loading ? (
+                    <div className="flex justify-center items-center py-10">
+                        <p>Loading data...</p>
+                    </div>
+                ) : (
+                    <table className="min-w-full divide-y">
+                        <thead>
+                            <tr>
+                                <th className="pl-[50px] tracking-wider">Student Name</th>
+                                <th className="text-center tracking-wider">Student Enrollment No</th>
+                                <th className="tracking-wider">Final Score</th>
+                                <th className="tracking-wider">Detail Overview of Grade</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {currentStudents.map((student, index) => (
+                                <tr key={index}>
+                                    <td className="whitespace-nowrap">{student.name}</td>
+                                    <td className="text-center whitespace-nowrap">{student.enrollment}</td>
+                                    <td className="text-center whitespace-nowrap">{student.score}</td>
+                                    <td className="text-center whitespace-nowrap">
+                                        <a
+                                            href={student.pdfLink}
+                                            className="text-blue-600 hover:text-blue-900"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <Eye className="inline mr-2 h-4 w-4" /> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
 
                 {/* Pagination */}
                 <ReactPaginate
