@@ -26,7 +26,7 @@ function UploadAssignments() {
                 const response = await axios.get('/ai_assessment/course_list/');
                 if (response.status === 200) {
                     setCourses(response.data);
-                    console.log("course", response.data);
+                
                 }
             } catch (error) {
                 message.error('Failed to load course list.');
@@ -53,7 +53,7 @@ function UploadAssignments() {
                 
                 if (response.status === 200) {
                     setModules(response.data);
-                    console.log("module", response.data);
+                    
                 }
             } catch (error) {
                 message.error('Failed to load module list.');

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import axios from '../../constants/axiosConfig';
 import './assesment.css';
 import { images } from '../../assets/images';
 import { Avatar } from "flowbite-react";
+import { Button,message } from 'antd';
 import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 import AssignmentForm from './UploadAssignments';
@@ -28,6 +30,33 @@ function Assesment() {
     }
   }, [location, navigate]);
 
+
+  const handleLogout = async () => {
+    try {
+      // Make the API call to log the user out using GET method
+      const token = localStorage.getItem('authToken');
+      await axios.post('/user/logout_check/', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Clear the token from local storage
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('str_session_key');
+      
+      // Show success message
+      message.success('Logged out successfully');
+      
+      // Redirect to the login page
+      navigate('/login');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Show error message
+      message.error('Failed to log out. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <div>
@@ -51,6 +80,12 @@ function Assesment() {
               {/* Text and SVG on the right */}
               <div className="flex items-center space-x-4">
                 <Avatar className='userheader' img={images.Avatar} rounded />
+                <Button 
+                  type="primary"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
               </div>
             </div>
           </header>

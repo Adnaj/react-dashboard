@@ -7,6 +7,7 @@ import { Eye } from 'lucide-react';
 import './assesment.css';
 import { images } from '../../assets/images';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Modal } from "flowbite-react";
 
 function ViewReport() {
     const [data, setData] = useState([]);
@@ -15,7 +16,10 @@ function ViewReport() {
     const [submittedStartDate, setSubmittedStartDate] = useState(null);
     const [submittedEndDate, setSubmittedEndDate] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
-    const [loading, setLoading] = useState(true); // New loading state
+    const [loading, setLoading] = useState(true);
+    const [openModal, setOpenModal] = useState(false);
+    const [studentSummary, setStudentSummary] = useState('');
+    const [studentName, setStudentName] = useState('')
     const studentsPerPage = 10;
 
     // Fetch data from the API when the component mounts
@@ -23,7 +27,7 @@ function ViewReport() {
         const fetchData = async () => {
             try {
                 const response = await axios.get('/ai_assessment/assessment_report/');
-                console.log("API Response:", response.data.data); // Log the response
+                
                 const apiData = response.data.data.map((item, index) => {
                     const dateObj = new Date(item.dat_created);
                     const formattedDate = dateObj.toLocaleDateString('en-GB'); // format to dd/MM/yyyy
@@ -32,13 +36,14 @@ function ViewReport() {
                         name: item.vchr_student_name,
                         enrollment: item.vchr_student_enrollment_number,
                         score: item.vchr_final_score,
+                        summary: item.vchr_summary,
                         date: formattedDate,
                         pdfLink: item.file_detailed_overview
                     };
                 });
                 setData(apiData);
                 setLoading(false); // Set loading to false once data is fetched
-                console.log("apidata", apiData);
+               
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setLoading(false); // Set loading to false even if there's an error
@@ -81,13 +86,14 @@ function ViewReport() {
     const handleSubmit = () => {
         setSubmittedStartDate(startDate ? parseDate(startDate.toLocaleDateString('en-GB')) : null);
         setSubmittedEndDate(endDate ? parseDate(endDate.toLocaleDateString('en-GB')) : null);
-        setCurrentPage(0); 
+        setCurrentPage(0);
     };
 
     const formatDate = (dateString) => {
         const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
         return new Date(dateString).toLocaleDateString('en-GB', options);
     };
+    
 
     return (
         <div className="tab-view-report max-w-[981px] mx-auto">
@@ -116,7 +122,7 @@ function ViewReport() {
                     Apply now
                 </button>
             </div>
-            
+
             <div className="view-report-table">
                 {loading ? (
                     <div className="flex justify-center items-center py-10">
@@ -129,6 +135,7 @@ function ViewReport() {
                                 <th className="pl-[50px] tracking-wider">Student Name</th>
                                 <th className="text-center tracking-wider">Student Enrollment No</th>
                                 <th className="tracking-wider">Final Score</th>
+                                <th className="tracking-wider">Summary</th>
                                 <th className="tracking-wider">Detail Overview of Grade</th>
                             </tr>
                         </thead>
@@ -138,6 +145,18 @@ function ViewReport() {
                                     <td className="whitespace-nowrap">{student.name}</td>
                                     <td className="text-center whitespace-nowrap">{student.enrollment}</td>
                                     <td className="text-center whitespace-nowrap">{student.score}</td>
+                                    <td className="text-center whitespace-nowrap">
+                                        <button
+                                            className='underline text-center w-full'
+                                            onClick={() => {
+                                                setStudentSummary(student.summary);
+                                                setStudentName(student.name);
+                                                setOpenModal(true);
+                                            }}
+                                        >
+                                            view
+                                        </button>
+                                    </td>
                                     <td className="text-center whitespace-nowrap">
                                         <a
                                             href={student.pdfLink}
@@ -166,6 +185,31 @@ function ViewReport() {
                     disabledClassName={"pagination__link--disabled"}
                     activeClassName={"pagination__link--active"}
                 />
+
+                <>
+
+                    <Modal dismissible show={openModal} onClose={() => setOpenModal(false)}>
+                        <Modal.Header> { studentName} </Modal.Header>
+                        <Modal.Body>
+
+                            {studentSummary ? (
+                                <div className="space-y-6">
+                                    <p className="text-base leading-relaxed text-gray-500 dark:text-gray-400">
+                                       {studentSummary}
+                                    </p>
+                                    
+                                </div>
+                            ) : (
+
+                                <div className="space-y-6">
+                                    <p>No student Summery</p>
+                                </div>
+                                
+                            )}
+
+                        </Modal.Body>
+                    </Modal>
+                </>
             </div>
         </div>
     );
