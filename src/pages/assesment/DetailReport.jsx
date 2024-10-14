@@ -8,7 +8,7 @@ import axios from '../../constants/axiosConfig';
 import { images } from '../../assets/images';
 import { Modal } from "flowbite-react";
 
-function ViewReport() {
+function DetailReport() {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [submittedStartDate, setSubmittedStartDate] = useState(null);
@@ -16,25 +16,30 @@ function ViewReport() {
     const [currentPage, setCurrentPage] = useState(0);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [openModal, setOpenModal] = useState(false);
-    const [data, setData] = useState([]); 
-    const [loading, setLoading] = useState(true); // New state for loading
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
     const itemsPerPage = 10;
 
-    // Fetch data from API
+    // Fetch data from API and parse dateOfEvaluation into Date object
     const fetchData = async () => {
         try {
             const response = await axios.get('/ai_assessment/detailed_assessment_report/');
-            const fetchedData = response.data.data.map(item => ({
-                id: item.id,
-                module: item.vchr_module_name,
-                faculty: item.vchr_faculty_name,
-                dateOfEvaluation: item.dat_evaluation,
-                studentsCount: item.int_assessment_count,
-                students: item.details.map(detail => ({
-                    name: detail.vchr_student_name,
-                    score: detail.vchr_final_score
-                }))
-            }));
+            const fetchedData = response.data.data.map((item, index) => {
+                const dateObj = new Date(item.dat_evaluation);
+                const formattedDate = dateObj.toLocaleDateString('en-GB'); // Format to dd/MM/yyyy
+                
+                return {
+                    id: index,
+                    module: item.vchr_module_name,
+                    faculty: item.vchr_faculty_name,
+                    dateOfEvaluation: formattedDate, // Parse date here as Date object
+                    studentsCount: item.int_assessment_count,
+                    students: item.details.map(detail => ({
+                        name: detail.vchr_student_name,
+                        score: detail.vchr_final_score
+                    }))
+                };
+            });
             setData(fetchedData);
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -47,10 +52,16 @@ function ViewReport() {
         fetchData();
     }, []);
 
-    // Filter and sort data
+    // Function to parse dd/MM/yyyy to Date object
+    const parseDate = (dateString) => {
+        const [day, month, year] = dateString.split('/');
+        return new Date(`${year}-${month}-${day}`);
+    };
+
+    // Filter, sort, and paginate the data
     const filteredData = data
         .filter(entry => {
-            const entryDate = new Date(entry.dateOfEvaluation);
+            const entryDate = parseDate(entry.dateOfEvaluation);
             if (submittedStartDate && submittedEndDate) {
                 return entryDate >= submittedStartDate && entryDate <= submittedEndDate;
             } else if (submittedStartDate) {
@@ -60,12 +71,14 @@ function ViewReport() {
             }
             return true;
         })
-        .sort((a, b) => new Date(b.dateOfEvaluation) - new Date(a.dateOfEvaluation));
+        .sort((a, b) => parseDate(b.dateOfEvaluation) - parseDate(a.dateOfEvaluation)); // Sort by date descending
 
-    // Pagination
     const indexOfLastEntry = (currentPage + 1) * itemsPerPage;
     const indexOfFirstEntry = indexOfLastEntry - itemsPerPage;
     const currentEntries = filteredData.slice(indexOfFirstEntry, indexOfLastEntry);
+
+    console.log("currentstd",currentEntries)
+    console.log("filterdata",filteredData)
 
     const handlePageClick = (event) => {
         setCurrentPage(event.selected);
@@ -74,14 +87,15 @@ function ViewReport() {
     const pageCount = Math.ceil(filteredData.length / itemsPerPage);
 
     const handleSubmit = () => {
-        setSubmittedStartDate(startDate);
-        setSubmittedEndDate(endDate);
-        setCurrentPage(0); // Reset to the first page after filtering
+        setSubmittedStartDate(startDate ? parseDate(startDate.toLocaleDateString('en-GB')) : null); // No need to parse here
+        setSubmittedEndDate(endDate ? parseDate(endDate.toLocaleDateString('en-GB')) : null);
+        setCurrentPage(0);
+        console.log("date click")
     };
 
-    const formatDate = (dateString) => {
+    const formatDate = (date) => {
         const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-        return new Date(dateString).toLocaleDateString('en-GB', options);
+        return new Date(date).toLocaleDateString('en-GB', options);
     };
 
     return (
@@ -198,4 +212,4 @@ function ViewReport() {
     );
 }
 
-export default ViewReport;
+export default DetailReport;

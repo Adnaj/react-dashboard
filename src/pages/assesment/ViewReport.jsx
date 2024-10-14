@@ -8,6 +8,7 @@ import './assesment.css';
 import { images } from '../../assets/images';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from "flowbite-react";
+import { Copy } from 'lucide-react';
 
 function ViewReport() {
     const [data, setData] = useState([]);
@@ -27,7 +28,7 @@ function ViewReport() {
         const fetchData = async () => {
             try {
                 const response = await axios.get('/ai_assessment/assessment_report/');
-                
+
                 const apiData = response.data.data.map((item, index) => {
                     const dateObj = new Date(item.dat_created);
                     const formattedDate = dateObj.toLocaleDateString('en-GB'); // format to dd/MM/yyyy
@@ -43,7 +44,7 @@ function ViewReport() {
                 });
                 setData(apiData);
                 setLoading(false); // Set loading to false once data is fetched
-               
+
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setLoading(false); // Set loading to false even if there's an error
@@ -71,11 +72,14 @@ function ViewReport() {
             }
             return true;
         })
-        .sort((a, b) => parseDate(b.date) - parseDate(a.date)); // Sort by date descending
+        .sort((a, b) => parseDate(b.date) - parseDate(a.date));
 
     const indexOfLastStudent = (currentPage + 1) * studentsPerPage;
     const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
     const currentStudents = filteredData.slice(indexOfFirstStudent, indexOfLastStudent);
+
+    console.log("currentstd", currentStudents)
+    console.log("filterdata", filteredData)
 
     const handlePageClick = (event) => {
         setCurrentPage(event.selected);
@@ -93,7 +97,7 @@ function ViewReport() {
         const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
         return new Date(dateString).toLocaleDateString('en-GB', options);
     };
-    
+
 
     return (
         <div className="tab-view-report max-w-[981px] mx-auto">
@@ -189,22 +193,30 @@ function ViewReport() {
                 <>
 
                     <Modal dismissible show={openModal} onClose={() => setOpenModal(false)}>
-                        <Modal.Header> { studentName} </Modal.Header>
+                        <Modal.Header> {studentName} </Modal.Header>
                         <Modal.Body>
 
                             {studentSummary ? (
                                 <div className="space-y-6">
                                     <p className="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-                                       {studentSummary}
+                                        {studentSummary}
                                     </p>
-                                    
+
+                                    <button
+                                        onClick={() => navigator.clipboard.writeText(studentSummary)}
+                                        className=" text-[#0B434B] hover:text-gray-700 dark:hover:text-gray-300"
+                                        aria-label="Copy text"
+                                    >
+                                        <Copy size={20} />
+                                    </button>
+
                                 </div>
                             ) : (
 
                                 <div className="space-y-6">
                                     <p>No student Summery</p>
                                 </div>
-                                
+
                             )}
 
                         </Modal.Body>
