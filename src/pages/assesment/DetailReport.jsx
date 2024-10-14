@@ -160,7 +160,7 @@ function DetailReport() {
                                             </button>
                                         </div>
                                     </td>
-                                    <td className="text-center">{formatDate(entry.dateOfEvaluation)}</td>
+                                    <td className="text-center">{entry.dateOfEvaluation}</td>
                                 </tr>
                             ))}
                         </tbody>
