@@ -101,31 +101,35 @@ function ViewReport() {
 
     return (
         <div className="tab-view-report max-w-[981px] mx-auto">
-            <div className="flex space-x-1 date-filter">
-                <img src={images.CalendorIcon} alt="Calendar Icon" />
-                <DatePicker
-                    selected={startDate}
-                    onChange={(date) => setStartDate(date)}
-                    selectsStart
-                    startDate={startDate}
-                    endDate={endDate}
-                    placeholderText="Start Date"
-                    dateFormat="dd/MM/yyyy"
-                />
-                -
-                <DatePicker
-                    selected={endDate}
-                    onChange={(date) => setEndDate(date)}
-                    selectsEnd
-                    startDate={startDate}
-                    endDate={endDate}
-                    placeholderText="End Date"
-                    dateFormat="dd/MM/yyyy"
-                />
-                <button onClick={handleSubmit}>
-                    Apply now
-                </button>
+
+            <div className='flex space-x-4 filters'>
+                <div className="flex space-x-1 date-filter">
+                    <img src={images.CalendorIcon} alt="Calendar Icon" />
+                    <DatePicker
+                        selected={startDate}
+                        onChange={(date) => setStartDate(date)}
+                        selectsStart
+                        startDate={startDate}
+                        endDate={endDate}
+                        placeholderText="Start Date"
+                        dateFormat="dd/MM/yyyy"
+                    />
+                    -
+                    <DatePicker
+                        selected={endDate}
+                        onChange={(date) => setEndDate(date)}
+                        selectsEnd
+                        startDate={startDate}
+                        endDate={endDate}
+                        placeholderText="End Date"
+                        dateFormat="dd/MM/yyyy"
+                    />
+                    <button onClick={handleSubmit}>
+                        Apply now
+                    </button>
+                </div>
             </div>
+
 
             <div className="view-report-table">
                 {loading ? (

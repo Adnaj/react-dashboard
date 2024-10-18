@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './assesment.css';
 import { Upload, Button, message } from 'antd';
+import { notification } from 'antd';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { Modal } from "flowbite-react";
 import axios from '../../constants/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,6 +18,8 @@ function UploadAssignments() {
     const [courses, setCourses] = useState([]); // State to hold course list
     const [modules, setModules] = useState([]); // State to hold module list
     const [loading, setLoading] = useState(false); // Loading state for button
+    const [openModal, setOpenModal] = useState(false);
+    const [successData, setSuccessData] = useState(null)
 
     const navigate = useNavigate(); // Initialize useNavigate for navigation
 
@@ -26,7 +30,7 @@ function UploadAssignments() {
                 const response = await axios.get('/ai_assessment/course_list/');
                 if (response.status === 200) {
                     setCourses(response.data);
-                
+
                 }
             } catch (error) {
                 message.error('Failed to load course list.');
@@ -50,17 +54,17 @@ function UploadAssignments() {
                         }
                     }
                 );
-                
+
                 if (response.status === 200) {
                     setModules(response.data);
-                    
+
                 }
             } catch (error) {
                 message.error('Failed to load module list.');
                 console.error('Error fetching modules:', error);
             }
         };
-    
+
         if (courseName) {
             fetchModules(courseName);
         } else {
@@ -133,8 +137,21 @@ function UploadAssignments() {
                 },
             });
             if (response.status === 200) {
-                message.success('Assignments uploaded successfully!');
-                navigate('/assessment', { state: { activeTab: 1 } });
+                console.log("response", response);
+                if (response.data.status === 1) {
+                    console.log("response.data", response.data);
+                    setSuccessData(response.data);
+                    setOpenModal(true);
+                } else if (response.data.status === 0) {
+                    notification.error({
+                        message: 'Error',
+                        description: response.data.reason || 'Failed to load module list.',
+                        duration: 120,
+                    });
+                    
+                }
+                // message.success('Assignments uploaded successfully!');
+                // navigate('/assessment', { state: { activeTab: 1 } });
             } else {
                 message.error('Something went wrong. Please try again.');
             }
@@ -210,9 +227,10 @@ function UploadAssignments() {
                                 multiple
                                 showUploadList={{ showRemoveIcon: true }}
                                 listType='text'
-                                accept='.pdf,.txt,.doc'
+                                accept='.pdf,.txt,.doc,.docx'
                                 beforeUpload={beforeUpload}
                                 onChange={handleUploadChange}
+                                fileList={assignments}
                             >
                                 <div className='assgn-txt'>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="44" height="45" viewBox="0 0 44 45" fill="none">
@@ -273,10 +291,47 @@ function UploadAssignments() {
                         disabled={loading}
                         loading={loading} // Set loading state here
                     >
-                        {loading ? "Uploading..." : 'Submit' }
+                        {loading ? "Uploading..." : 'Submit'}
                     </Button>
                 </div>
             </form>
+
+            <Modal dismissible show={openModal} onClose={() => setOpenModal(false)} className='modal-bdy modal-bdy-upload'>
+                <Modal.Body>
+                    {successData ? (
+                        <div>
+                            <table className="w-full border-collapse">
+
+                                <tr>
+                                    <th className="text-left">total_files</th>
+                                    <td className="text-center">{successData.total_files}</td>
+                                </tr>
+                                <tr>
+                                    <th className="text-left">total_success</th>
+                                    <td className="text-center">{successData.total_success}</td>
+                                </tr>
+                                <tr>
+                                    <th className="text-left">total_failed</th>
+                                    <td className="text-center">{successData.total_failed}</td>
+                                </tr>
+
+                            </table>
+                        </div>
+                    ) : (
+                        <p>No data available</p>
+                    )}
+                </Modal.Body>
+                <Modal.Footer className='footer_upload_popup'>
+                    <Button
+                        onClick={() => {
+                            setOpenModal(false);
+                            navigate('/assessment', { state: { activeTab: 1 } });
+                        }}
+                    >
+                        OK
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 }

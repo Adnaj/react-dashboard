@@ -217,10 +217,11 @@ letter-spacing: -0.615px;
         margin-bottom: 18px;
         border-radius: 64px;
         border: 1px solid rgba(11, 67, 75, 0.43);
-        width: 410px;
+        width: auto;
         height: 57px;
         margin: auto;
         margin-bottom: 18px;
+        padding: 0 10px;
       }
       .date-filter input{
         border: none;
@@ -234,6 +235,14 @@ letter-spacing: -0.615px;
         line-height: normal;
         letter-spacing: -0.419px;
       }
+      .module-month-filter{
+        width: 175px !important;
+      }
+      .course-filter{
+        border: none;
+      }
+
+
       .date-filter input::placeholder{
         color: #0B434B;
         font-family: Inter;
@@ -242,6 +251,7 @@ letter-spacing: -0.615px;
         font-weight: 600;
         line-height: normal;
         letter-spacing: -0.419px;
+      
       }
       .date-filter input:focus{
         outline: none;
@@ -431,10 +441,19 @@ letter-spacing: -0.615px;
   margin-right: 3px;
 }
 
+
+
 .modal-bdy > div > div{
   border-radius: 31.961px;
   border: 0.757px solid rgba(11, 67, 75, 0.17);
   overflow: hidden;
+}
+
+.modal-bdy-upload> div > div{
+  border-radius: 10px;
+  border: 0.757px solid rgba(11, 67, 75, 0.17);
+  overflow: hidden;
+  padding: 30px;
 }
 .modal-bdy > div > div > div{
   padding: 0;
@@ -457,6 +476,28 @@ letter-spacing: -0.615px;
   border-bottom: 0.4px solid #0b424b5b;
   
 }
+.modal-bdy-upload table th, .modal-bdy table td {
+  padding: 16px 16px;
+  border: 0.4px solid #0b424b5b;
+  
+}
+.footer_upload_popup{
+  padding-top: 20px !important;
+  margin-left: auto;
+}
+.footer_upload_popup button{
+  background: #D9634E !important;
+    color: #fff;
+    font-size: 18px;
+    width: 90px;
+    height: 35px;
+}
+.footer_upload_popup button:hover{
+  background: #D9634E !important;
+    color: #fff!important;
+    border: none;
+}
+
 .modal-bdy table td {
   color: #17444c;
   font-family: Inter;
@@ -488,10 +529,16 @@ letter-spacing: -0.615px;
   border-right:none;
   color: #E4790E;
 }
+.modal-bdy-upload table td:nth-child(2n){
+  text-decoration: none;
+}
 
 /* Custom scrollbar styles */
 .modal-bdy > div > div > div::-webkit-scrollbar {
   width: 10px; /* Width of the scrollbar */
+}
+.modal-bdy-upload table td:last-child {
+  border-right:0.4px solid #0b424b5b;
 }
 
 .modal-bdy > div > div >div::-webkit-scrollbar-track {

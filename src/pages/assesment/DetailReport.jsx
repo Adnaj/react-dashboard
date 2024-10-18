@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import ReactPaginate from 'react-paginate';
-import { Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import './assesment.css';
 import axios from '../../constants/axiosConfig';
 import { images } from '../../assets/images';
@@ -11,28 +11,42 @@ import { Modal } from "flowbite-react";
 function DetailReport() {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
-    const [submittedStartDate, setSubmittedStartDate] = useState(null);
-    const [submittedEndDate, setSubmittedEndDate] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [openModal, setOpenModal] = useState(false);
     const [data, setData] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [courses, setCourses] = useState([]);
     const itemsPerPage = 10;
 
-    // Fetch data from API and parse dateOfEvaluation into Date object
+    // State for filter inputs
+    const [courseInput, setCourseInput] = useState('');
+    const [moduleMonthInput, setModuleMonthInput] = useState(null);
+
+    // State for applied filters
+    const [appliedFilters, setAppliedFilters] = useState({
+        startDate: null,
+        endDate: null,
+        course: '',
+        moduleMonth: null
+    });
+
+    // Fetch data from API and parse dates into Date objects
     const fetchData = async () => {
         try {
             const response = await axios.get('/ai_assessment/detailed_assessment_report/');
             const fetchedData = response.data.data.map((item, index) => {
                 const dateObj = new Date(item.dat_evaluation);
-                const formattedDate = dateObj.toLocaleDateString('en-GB'); // Format to dd/MM/yyyy
-                
+                const moduleMonth = new Date(item.module_month);
+
                 return {
                     id: index,
+                    course: item.vchr_course_name,
                     module: item.vchr_module_name,
+                    module_month: moduleMonth,
                     faculty: item.vchr_faculty_name,
-                    dateOfEvaluation: formattedDate, // Parse date here as Date object
+                    dateOfEvaluation: dateObj,
                     studentsCount: item.int_assessment_count,
                     students: item.details.map(detail => ({
                         name: detail.vchr_student_name,
@@ -41,10 +55,15 @@ function DetailReport() {
                 };
             });
             setData(fetchedData);
+            setFilteredData(fetchedData);
+
+            // Extract unique courses
+            const uniqueCourses = [...new Set(fetchedData.map(item => item.course))];
+            setCourses(uniqueCourses);
         } catch (error) {
             console.error("Error fetching data:", error);
         } finally {
-            setLoading(false); // Stop loading once data is fetched
+            setLoading(false);
         }
     };
 
@@ -52,33 +71,47 @@ function DetailReport() {
         fetchData();
     }, []);
 
-    // Function to parse dd/MM/yyyy to Date object
-    const parseDate = (dateString) => {
-        const [day, month, year] = dateString.split('/');
-        return new Date(`${year}-${month}-${day}`);
+    // Apply filters
+    const applyFilters = () => {
+        const filtered = data.filter(entry => {
+            let dateFilter = true;
+            if (appliedFilters.startDate && appliedFilters.endDate) {
+                dateFilter = entry.dateOfEvaluation >= appliedFilters.startDate && entry.dateOfEvaluation <= appliedFilters.endDate;
+            } else if (appliedFilters.startDate) {
+                dateFilter = entry.dateOfEvaluation >= appliedFilters.startDate;
+            } else if (appliedFilters.endDate) {
+                dateFilter = entry.dateOfEvaluation <= appliedFilters.endDate;
+            }
+
+            const courseFilter = appliedFilters.course ? entry.course === appliedFilters.course : true;
+            const moduleMonthFilter = appliedFilters.moduleMonth ?
+                entry.module_month.getMonth() === appliedFilters.moduleMonth.getMonth() &&
+                entry.module_month.getFullYear() === appliedFilters.moduleMonth.getFullYear() : true;
+
+            return dateFilter && courseFilter && moduleMonthFilter;
+        })
+            .sort((a, b) => b.dateOfEvaluation - a.dateOfEvaluation);
+
+        setFilteredData(filtered);
+        setCurrentPage(0);
     };
 
-    // Filter, sort, and paginate the data
-    const filteredData = data
-        .filter(entry => {
-            const entryDate = parseDate(entry.dateOfEvaluation);
-            if (submittedStartDate && submittedEndDate) {
-                return entryDate >= submittedStartDate && entryDate <= submittedEndDate;
-            } else if (submittedStartDate) {
-                return entryDate >= submittedStartDate;
-            } else if (submittedEndDate) {
-                return entryDate <= submittedEndDate;
-            }
-            return true;
-        })
-        .sort((a, b) => parseDate(b.dateOfEvaluation) - parseDate(a.dateOfEvaluation)); // Sort by date descending
+    useEffect(() => {
+        applyFilters();
+    }, [appliedFilters]);
+
+    const handleSubmit = () => {
+        setAppliedFilters({
+            startDate,
+            endDate,
+            course: courseInput,
+            moduleMonth: moduleMonthInput
+        });
+    };
 
     const indexOfLastEntry = (currentPage + 1) * itemsPerPage;
     const indexOfFirstEntry = indexOfLastEntry - itemsPerPage;
     const currentEntries = filteredData.slice(indexOfFirstEntry, indexOfLastEntry);
-
-    console.log("currentstd",currentEntries)
-    console.log("filterdata",filteredData)
 
     const handlePageClick = (event) => {
         setCurrentPage(event.selected);
@@ -86,44 +119,59 @@ function DetailReport() {
 
     const pageCount = Math.ceil(filteredData.length / itemsPerPage);
 
-    const handleSubmit = () => {
-        setSubmittedStartDate(startDate ? parseDate(startDate.toLocaleDateString('en-GB')) : null); // No need to parse here
-        setSubmittedEndDate(endDate ? parseDate(endDate.toLocaleDateString('en-GB')) : null);
-        setCurrentPage(0);
-        console.log("date click")
-    };
-
     const formatDate = (date) => {
-        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-        return new Date(date).toLocaleDateString('en-GB', options);
+        return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
     return (
-        <div className="tab-view-report max-w-[981px] mx-auto">
-            <div className="flex space-x-1 date-filter">
-                <img src={images.CalendorIcon} alt="" />
-                <DatePicker
-                    selected={startDate}
-                    onChange={(date) => setStartDate(date)}
-                    selectsStart
-                    startDate={startDate}
-                    endDate={endDate}
-                    placeholderText="Start Date"
-                    dateFormat="dd/MM/yyyy"
-                />
-                -
-                <DatePicker
-                    selected={endDate}
-                    onChange={(date) => setEndDate(date)}
-                    selectsEnd
-                    startDate={startDate}
-                    endDate={endDate}
-                    placeholderText="End Date"
-                    dateFormat="dd/MM/yyyy"
-                />
-                <button onClick={handleSubmit}>
-                    Apply now
-                </button>
+        <div className="tab-view-report max-w-[1040px] mx-auto">
+            <div className="flex space-x-4 filters">
+                <div className="flex space-x-1 date-filter">
+                    <img src={images.CalendorIcon} alt="" />
+                    <DatePicker
+                        selected={startDate}
+                        onChange={(date) => setStartDate(date)}
+                        selectsStart
+                        startDate={startDate}
+                        endDate={endDate}
+                        placeholderText="Start Date"
+                        dateFormat="dd/MM/yyyy"
+                    />
+                    -
+                    <DatePicker
+                        selected={endDate}
+                        onChange={(date) => setEndDate(date)}
+                        selectsEnd
+                        startDate={startDate}
+                        endDate={endDate}
+                        placeholderText="End Date"
+                        dateFormat="dd/MM/yyyy"
+                    />
+
+                    <select
+                        value={courseInput}
+                        onChange={(e) => setCourseInput(e.target.value)}
+                        className="course-filter"
+                    >
+                        <option value="">All Courses</option>
+                        {courses.map((course, index) => (
+                            <option key={index} value={course}>{course}</option>
+                        ))}
+                    </select>
+                    <DatePicker
+                        selected={moduleMonthInput}
+                        onChange={(date) => setModuleMonthInput(date)}
+                        dateFormat="MM/yyyy"
+                        showMonthYearPicker
+                        placeholderText="Select Module Month"
+                        className="module-month-filter"
+                    />
+                    <button onClick={handleSubmit} className="apply-filter-btn">
+                        Apply Filters
+                    </button>
+                </div>
+
+
             </div>
 
             <div className="view-report-table overflow-x-auto">
@@ -135,6 +183,7 @@ function DetailReport() {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
+                                <th className="text-left">Course Name</th>
                                 <th className="text-left">Module Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty Name</th>
                                 <th className="text-center">List of Students</th>
@@ -144,6 +193,7 @@ function DetailReport() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {currentEntries.map((entry) => (
                                 <tr key={entry.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.course}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.module}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{entry.faculty}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -160,7 +210,7 @@ function DetailReport() {
                                             </button>
                                         </div>
                                     </td>
-                                    <td className="text-center">{entry.dateOfEvaluation}</td>
+                                    <td className="text-center">{formatDate(entry.dateOfEvaluation)}</td>
                                 </tr>
                             ))}
                         </tbody>
