@@ -72,6 +72,10 @@ function UploadAssignments() {
         }
     }, [courseName]);
 
+
+      
+
+
     const beforeUpload = (file) => {
         const isFileSizeValid = file.size / 1024 / 1024 < 100; // Check if file is less than 100MB
         if (!isFileSizeValid) {
@@ -119,6 +123,8 @@ function UploadAssignments() {
             setLoading(false);
             return;
         }
+        const formattedDate = `${startDate.getFullYear()}-${('0' + (startDate.getMonth() + 1)).slice(-2)}-${('0' + startDate.getDate()).slice(-2)}`;
+
 
         const formData = new FormData();
         assignments.forEach(file => {
@@ -128,7 +134,8 @@ function UploadAssignments() {
         formData.append('strFacultyLastName', facultyLastName);
         formData.append('intModuleId', moduleName);
         formData.append('intCourseId', courseName);
-        formData.append('moduleMonth', startDate ? startDate.toISOString().split('T')[0] : '');
+        formData.append('moduleMonth', startDate ? formattedDate : '' );
+        
 
         try {
             const response = await axios.post('/ai_assessment/ai_assessment/', formData, {
@@ -303,15 +310,15 @@ function UploadAssignments() {
                             <table className="w-full border-collapse">
 
                                 <tr>
-                                    <th className="text-left">total_files</th>
+                                    <th className="text-left">Total files</th>
                                     <td className="text-center">{successData.total_files}</td>
                                 </tr>
                                 <tr>
-                                    <th className="text-left">total_success</th>
+                                    <th className="text-left">Total success</th>
                                     <td className="text-center">{successData.total_success}</td>
                                 </tr>
                                 <tr>
-                                    <th className="text-left">total_failed</th>
+                                    <th className="text-left">Total failed</th>
                                     <td className="text-center">{successData.total_failed}</td>
                                 </tr>
 

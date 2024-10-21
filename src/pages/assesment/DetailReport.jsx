@@ -36,9 +36,11 @@ function DetailReport() {
     const fetchData = async () => {
         try {
             const response = await axios.get('/ai_assessment/detailed_assessment_report/');
+            console.log("response dth",response)
             const fetchedData = response.data.data.map((item, index) => {
                 const dateObj = new Date(item.dat_evaluation);
                 const moduleMonth = new Date(item.module_month);
+                console.log(index,moduleMonth)
 
                 return {
                     id: index,

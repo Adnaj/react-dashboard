@@ -27,7 +27,11 @@ function Assesment() {
     // Set the initial tab if activeTab is passed in the location state
     if (location.state && location.state.activeTab !== undefined) {
       setSelectedTabIndex(location.state.activeTab);
+    }else {
+      setSelectedTabIndex(0);
     }
+    console.log("location",location);
+    console.log("location",location.state);
   }, [location, navigate]);
 
 
